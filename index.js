@@ -26,8 +26,20 @@ const client = new MongoClient(uri, {
       await client.connect();
   
       const serviceCollection = client.db('homeService').collection('services');
+
+         // services related api
+         app.get('/services', async (req, res) => {
+            const cursor = serviceCollection.find();
+            const result = await cursor.toArray();
+            res.send(result);
+        })
   
-  
+      app.post('/addServices', async (req, res) => {
+        const service = req.body;
+        console.log(service);
+        const result = await serviceCollection.insertOne(service);
+        res.send(result);
+    });
       // Send a ping to confirm a successful connection
       await client.db("admin").command({ ping: 1 });
       console.log("Pinged your deployment. You successfully connected to MongoDB!");
