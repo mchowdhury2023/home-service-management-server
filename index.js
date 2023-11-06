@@ -14,43 +14,70 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
     serverApi: {
-      version: ServerApiVersion.v1,
-      strict: true,
-      deprecationErrors: true,
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
     }
-  });
+});
 
-  async function run() {
+async function run() {
     try {
-      // Connect the client to the server	(optional starting in v4.7)
-      await client.connect();
-  
-      const serviceCollection = client.db('homeService').collection('services');
+        // Connect the client to the server	(optional starting in v4.7)
+        await client.connect();
 
-         // services related api
-         app.get('/services', async (req, res) => {
+        const serviceCollection = client.db('homeService').collection('services');
+        //booking collection
+        const bookingCollection = client.db('homeService').collection('bookings');
+        //testimonial collection
+        const testimonialCollection = client.db('homeService').collection('testimonials');
+
+        // services related api
+        app.get('/services', async (req, res) => {
             const cursor = serviceCollection.find();
             const result = await cursor.toArray();
             res.send(result);
         })
-  
-      app.post('/addServices', async (req, res) => {
-        const service = req.body;
-        console.log(service);
-        const result = await serviceCollection.insertOne(service);
-        res.send(result);
-    });
-      // Send a ping to confirm a successful connection
-      await client.db("admin").command({ ping: 1 });
-      console.log("Pinged your deployment. You successfully connected to MongoDB!");
-    } finally {
-      // Ensures that the client will close when you finish/error
-      //await client.close();
-    }
-  }
-  run().catch(console.dir);
 
-  app.get('/', (req, res) => {
+        app.get('/services/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await serviceCollection.findOne(query);
+            res.send(result);
+        })
+
+        app.post('/addServices', async (req, res) => {
+            const service = req.body;
+            console.log(service);
+            const result = await serviceCollection.insertOne(service);
+            res.send(result);
+        });
+
+        //get all testimonials
+        app.get('/testimonials', async (req, res) => {
+            const cursor = testimonialCollection.find();
+            const result = await cursor.toArray();
+            res.send(result);
+        });
+
+        //post all testimonial
+
+        app.post('/testimonials', async (req, res) => {
+            const newTestimonial = req.body;
+            const result = await testimonialCollection.insertOne(newTestimonial);
+            res.send(result);
+        });
+
+        // Send a ping to confirm a successful connection
+        await client.db("admin").command({ ping: 1 });
+        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    } finally {
+        // Ensures that the client will close when you finish/error
+        //await client.close();
+    }
+}
+run().catch(console.dir);
+
+app.get('/', (req, res) => {
     res.send('Home service is running')
 })
 
