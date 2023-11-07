@@ -96,15 +96,32 @@ async function run() {
         //booking api
 
         app.get('/bookings', async (req, res) => {
-            //console.log(req.query.email);
-             
-             let query = {};
-             if (req.query?.email) {
-                 query = { userEmail: req.query.email }
-             }
-             const result = await bookingCollection.find(query).toArray();
-             res.send(result);
-         })
+            let query = {};
+          
+            // Fetch bookings made by the logged-in user
+            if (req.query?.userEmail) {
+              query['userEmail'] = req.query.userEmail;
+            }
+          
+            // Fetch bookings where the logged-in user is the service provider
+            if (req.query?.serviceProviderEmail) {
+              query['serviceProviderEmail'] = req.query.serviceProviderEmail;
+            }
+          
+            // If both userEmail and serviceProviderEmail are provided, use $or to fetch both sets of bookings
+            if (req.query?.userEmail && req.query?.serviceProviderEmail) {
+              query = {
+                $or: [
+                  { userEmail: req.query.userEmail },
+                  { serviceProviderEmail: req.query.serviceProviderEmail }
+                ]
+              };
+            }
+          
+            const result = await bookingCollection.find(query).toArray();
+            res.send(result);
+          });
+          
 
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
