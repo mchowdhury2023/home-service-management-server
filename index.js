@@ -38,6 +38,26 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/manageservices', async (req, res) => {
+            //console.log(req.query.email);
+            let query = {};
+            if (req.query?.email) {
+                query = { providerEmail: req.query.email }
+            }
+            const result = await serviceCollection.find(query).toArray();
+            res.send(result);
+        });
+
+        app.delete('/services/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await serviceCollection.deleteOne(query);
+            res.send(result);
+        })
+        
+        
+        
+
         app.get('/services/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -51,6 +71,70 @@ async function run() {
             const result = await serviceCollection.insertOne(service);
             res.send(result);
         });
+
+        //update service
+        app.put('/services/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updatedService = req.body;
+            const service = {
+                $set: {
+                    serviceName: updatedService.serviceName,
+                    serviceImage: updatedService.serviceImage,
+                    serviceArea: updatedService.serviceArea,
+                    servicePrice: updatedService.servicePrice,
+                    serviceDescription: updatedService.serviceDescription,
+                    providerEmail: updatedService.providerEmail,
+                
+                }
+            }
+            const result = await serviceCollection.updateOne(query, service, options);
+            res.send(result);
+        })
+
+        //booking api
+
+        app.get('/bookings', async (req, res) => {
+            //console.log(req.query.email);
+             
+             let query = {};
+             if (req.query?.email) {
+                 query = { userEmail: req.query.email }
+             }
+             const result = await bookingCollection.find(query).toArray();
+             res.send(result);
+         })
+
+        app.post('/bookings', async (req, res) => {
+            const booking = req.body;
+            console.log(booking);
+            const result = await bookingCollection.insertOne(booking);
+            res.send(result);
+        });
+
+        app.patch('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updatedBooking = req.body;
+            console.log(updatedBooking);
+            const updateDoc = {
+                $set: {
+                    status: updatedBooking.status
+                },
+            };
+            const result = await bookingCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
+
+        app.delete('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await bookingCollection.deleteOne(query);
+            res.send(result);
+        })
+
+
 
         //get all testimonials
         app.get('/testimonials', async (req, res) => {
