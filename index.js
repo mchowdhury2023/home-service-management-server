@@ -9,8 +9,8 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 app.use(cors({
-    origin: ['http://localhost:5173'],
-    credentials: true
+    origin: ['http://localhost:5173', 'https://home-service-app-ca7a7.web.app'],
+    credentials: true,
 }));
 app.use(express.json());
 app.use(cookieParser());
@@ -50,7 +50,7 @@ const verifyToken = async (req, res, next) => {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        //await client.connect();
 
         const serviceCollection = client.db('homeService').collection('services');
         //booking collection
@@ -58,23 +58,25 @@ async function run() {
         //testimonial collection
         const testimonialCollection = client.db('homeService').collection('testimonials');
 
-         //auth related api
-    app.post('/jwt', async (req, res) => {
-        const user = req.body;
-        console.log(user);
-      
-        const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-            expiresIn: '1h'
-        });
-        res
-        .cookie('token', token, {
-            httpOnly: true,
-            secure: false,
-        })
-        .send({ success: true })
+        //auth related api
+        app.post('/jwt', async (req, res) => {
+            const user = req.body;
+            console.log(user);
 
-        
-    })
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '1h'
+            });
+            res
+                .cookie('token', token, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+                })
+                .send({ success: true })
+
+
+
+        })
         // services related api
         app.get('/services', async (req, res) => {
             const cursor = serviceCollection.find();
@@ -83,7 +85,7 @@ async function run() {
         })
 
         app.get('/manageservices', verifyToken, async (req, res) => {
-        
+
             //console.log(req.query.email);
             let query = {};
             if (req.query?.email) {
@@ -99,9 +101,9 @@ async function run() {
             const result = await serviceCollection.deleteOne(query);
             res.send(result);
         })
-        
-        
-        
+
+
+
 
         app.get('/services/:id', async (req, res) => {
             const id = req.params.id;
@@ -110,8 +112,8 @@ async function run() {
             res.send(result);
         })
 
-        app.post('/addServices',verifyToken, async (req, res) => {
-        
+        app.post('/addServices', verifyToken, async (req, res) => {
+
             const service = req.body;
             console.log(service);
             const result = await serviceCollection.insertOne(service);
@@ -132,7 +134,7 @@ async function run() {
                     servicePrice: updatedService.servicePrice,
                     serviceDescription: updatedService.serviceDescription,
                     providerEmail: updatedService.providerEmail,
-                
+
                 }
             }
             const result = await serviceCollection.updateOne(query, service, options);
@@ -141,35 +143,35 @@ async function run() {
 
         //booking api
 
-        app.get('/bookings',verifyToken, async (req, res) => {
+        app.get('/bookings', verifyToken, async (req, res) => {
 
-           // console.log('tok tok token', req.cookies.token)
+            // console.log('tok tok token', req.cookies.token)
             let query = {};
-          
+
             // Fetch bookings made by the logged-in user
             if (req.query?.userEmail) {
-              query['userEmail'] = req.query.userEmail;
+                query['userEmail'] = req.query.userEmail;
             }
-          
+
             // Fetch bookings where the logged-in user is the service provider
             if (req.query?.serviceProviderEmail) {
-              query['serviceProviderEmail'] = req.query.serviceProviderEmail;
+                query['serviceProviderEmail'] = req.query.serviceProviderEmail;
             }
-          
+
             // If both userEmail and serviceProviderEmail are provided, use $or to fetch both sets of bookings
             if (req.query?.userEmail && req.query?.serviceProviderEmail) {
-              query = {
-                $or: [
-                  { userEmail: req.query.userEmail },
-                  { serviceProviderEmail: req.query.serviceProviderEmail }
-                ]
-              };
+                query = {
+                    $or: [
+                        { userEmail: req.query.userEmail },
+                        { serviceProviderEmail: req.query.serviceProviderEmail }
+                    ]
+                };
             }
-          
+
             const result = await bookingCollection.find(query).toArray();
             res.send(result);
-          });
-          
+        });
+
 
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
@@ -218,7 +220,7 @@ async function run() {
         });
 
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
+       // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
