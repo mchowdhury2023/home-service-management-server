@@ -125,6 +125,7 @@ async function run() {
 
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
+            booking.status = booking.status || 'pending';
             console.log(booking);
             const result = await bookingCollection.insertOne(booking);
             res.send(result);
