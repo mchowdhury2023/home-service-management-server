@@ -57,6 +57,8 @@ async function run() {
         const bookingCollection = client.db('homeService').collection('bookings');
         //testimonial collection
         const testimonialCollection = client.db('homeService').collection('testimonials');
+        //membership collection
+        const membershipCollection = client.db('homeService').collection('members');
 
         //auth related api
         app.post('/jwt', async (req, res) => {
@@ -216,6 +218,35 @@ async function run() {
         app.post('/testimonials', async (req, res) => {
             const newTestimonial = req.body;
             const result = await testimonialCollection.insertOne(newTestimonial);
+            res.send(result);
+        });
+
+        //loyalty program
+        app.get('/members', async (req, res) => {
+            const cursor = membershipCollection.find();
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        app.get('/members/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await membershipCollection.findOne(query);
+            res.send(result);
+        })
+
+        app.post('/members', async (req, res) => {
+            const newMember = req.body;
+
+            // Check if the user is already a member
+            const existingMember = await membershipCollection.findOne({ userEmail: newMember.userEmail });
+            if (existingMember) {
+                return res.status(409).send({ message: "User is already a member." });
+            }
+        
+            // Add new member to the database
+            const result = await membershipCollection.insertOne(newMember);
+        
             res.send(result);
         });
 
