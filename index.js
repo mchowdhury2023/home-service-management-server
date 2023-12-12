@@ -9,7 +9,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://home-service-app-ca7a7.web.app'],
+    origin: ['http://localhost:5174', 'https://home-service-app-ca7a7.web.app'],
     credentials: true,
 }));
 app.use(express.json());
@@ -85,6 +85,28 @@ async function run() {
             const result = await cursor.toArray();
             res.send(result);
         })
+
+        app.get('/sortservices', async (req, res) => {
+            try {
+              let sort = {};
+              if (req.query.sortOrder === 'asc') {
+                sort = { servicePrice: 1 }; // Ascending
+              } else if (req.query.sortOrder === 'desc') {
+                sort = { servicePrice: -1 }; // Descending
+              }
+          
+              // Retrieve the documents and convert to an array
+              const services = await serviceCollection.find({}).sort(sort).toArray();
+          
+              res.json(services);
+            } catch (error) {
+              console.error("Error fetching services:", error);
+              res.status(500).send("Error fetching services");
+            }
+          });
+          
+
+        
 
         app.get('/manageservices', verifyToken, async (req, res) => {
 
